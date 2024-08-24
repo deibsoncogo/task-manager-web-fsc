@@ -1,6 +1,7 @@
-import { CheckIcon, DetailsIcon, LoaderIcon } from "../assets/icons"
+import { CheckIcon, DetailsIcon, LoaderIcon, TrashIcon } from "../assets/icons"
+import { Button } from "./Button"
 
-export const TaskItem = ({ task, handleTaskCheckboxClick }) => {
+export const TaskItem = ({ task, handleCheckboxClick, handleDeleteClick }) => {
   const getVariantClasses = () => {
     if (task.status === "done") {
       return "bg-[#00adb5] text-[#00adb5]"
@@ -26,7 +27,7 @@ export const TaskItem = ({ task, handleTaskCheckboxClick }) => {
           <input
             type="checkbox"
             checked={task.status === "done"}
-            onChange={() => handleTaskCheckboxClick(task.id)}
+            onChange={() => handleCheckboxClick(task.id)}
             className="absolute h-full w-full cursor-pointer opacity-0"
           />
 
@@ -40,9 +41,15 @@ export const TaskItem = ({ task, handleTaskCheckboxClick }) => {
         {task.title}
       </div>
 
-      <a href="#" className="transition hover:opacity-75">
-        <DetailsIcon />
-      </a>
+      <div className="flex items-center gap-2">
+        <Button onClick={() => handleDeleteClick(task.id)} variant="ghost">
+          <TrashIcon className="text-[#9a9c9f]" />
+        </Button>
+
+        <a href="#" className="transition hover:opacity-75">
+          <DetailsIcon />
+        </a>
+      </div>
     </div>
   )
 }

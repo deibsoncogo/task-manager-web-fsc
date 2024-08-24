@@ -1,3 +1,4 @@
+import { toast } from "sonner"
 import { useState } from "react"
 import {
   AddIcon,
@@ -25,14 +26,17 @@ export const Tasks = () => {
       }
 
       if (task.status === "notStarted") {
+        toast.success("Tarefa iniciada com sucesso!")
         return { ...task, status: "inProgress" }
       }
 
       if (task.status === "inProgress") {
+        toast.success("Tarefa concluída com sucesso!")
         return { ...task, status: "done" }
       }
 
       if (task.status === "done") {
+        toast.success("Tarefa reiniciada com sucesso!")
         return { ...task, status: "notStarted" }
       }
 
@@ -40,6 +44,14 @@ export const Tasks = () => {
     })
 
     setTasks(newTasks)
+  }
+
+  const handleTaskDeleteClick = (taskId) => {
+    const newTasks = tasks.filter((task) => task.id !== taskId)
+
+    setTasks(newTasks)
+
+    toast.success("Tarefa deletada com sucesso!")
   }
 
   return (
@@ -72,7 +84,8 @@ export const Tasks = () => {
             <TaskItem
               key={task.id}
               task={task}
-              handleTaskCheckboxClick={handleTaskCheckboxClick}
+              handleCheckboxClick={handleTaskCheckboxClick}
+              handleDeleteClick={handleTaskDeleteClick}
             />
           ))}
         </div>
@@ -84,7 +97,8 @@ export const Tasks = () => {
             <TaskItem
               key={task.id}
               task={task}
-              handleTaskCheckboxClick={handleTaskCheckboxClick}
+              handleCheckboxClick={handleTaskCheckboxClick}
+              handleDeleteClick={handleTaskDeleteClick}
             />
           ))}
         </div>
@@ -96,7 +110,8 @@ export const Tasks = () => {
             <TaskItem
               key={task.id}
               task={task}
-              handleTaskCheckboxClick={handleTaskCheckboxClick}
+              handleCheckboxClick={handleTaskCheckboxClick}
+              handleDeleteClick={handleTaskDeleteClick}
             />
           ))}
         </div>
