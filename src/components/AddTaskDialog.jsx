@@ -3,6 +3,7 @@ import { createPortal } from "react-dom"
 import { CSSTransition } from "react-transition-group"
 import { Button } from "./Button"
 import { Input } from "./Input"
+import { Select } from "./Select"
 import "./AddTaskDialog.css"
 
 export const AddTaskDialog = ({ isOpen, handleClose }) => {
@@ -38,7 +39,7 @@ export const AddTaskDialog = ({ isOpen, handleClose }) => {
                   placeholder="Insira o título da tarefa"
                 />
 
-                <Input id="time" label="Horário" placeholder="Horário" />
+                <Select id="time" label="Horário" />
 
                 <Input
                   id="description"
