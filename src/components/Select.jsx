@@ -1,6 +1,6 @@
 import { Label } from "./Label"
 
-export const Select = ({ id, label, ...rest }) => {
+export const Select = ({ id, label, errorMessage, ...rest }) => {
   return (
     <div className="flex flex-col space-y-1 text-left">
       <Label htmlFor={id}>{label}</Label>
@@ -14,6 +14,10 @@ export const Select = ({ id, label, ...rest }) => {
         <option value="afternoon">Tarde</option>
         <option value="evening">Noite</option>
       </select>
+
+      {errorMessage && (
+        <p className="text-left text-xs text-red-500">{errorMessage}</p>
+      )}
     </div>
   )
 }
