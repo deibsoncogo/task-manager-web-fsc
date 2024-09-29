@@ -1,3 +1,4 @@
+import PropTypes from "prop-types"
 import { forwardRef } from "react"
 import { InputErrorMessage } from "./InputErrorMessage"
 import { Label } from "./Label"
@@ -26,3 +27,9 @@ export const Select = forwardRef(
 )
 
 Select.displayName = "Select"
+
+Select.propTypes = {
+  id: PropTypes.string.isRequired,
+  label: PropTypes.string.isRequired,
+  errorMessage: PropTypes.string,
+}
