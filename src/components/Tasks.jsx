@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import {
   AddIcon,
@@ -8,18 +8,31 @@ import {
   TrashIcon,
 } from "../assets/icons"
 import { TaskItem } from "../components/TaskItem"
-import { TASKS } from "../constants/tasks"
 import { AddTaskDialog } from "./AddTaskDialog"
 import { Button } from "./Button"
 import { TasksSeparator } from "./TasksSeparator"
 
 export const Tasks = () => {
-  const [tasks, setTasks] = useState(TASKS)
+  const [tasks, setTasks] = useState([])
   const [addTaskDialogIsOpen, setAddTaskDialogIsOpen] = useState(false)
 
   const morningTasks = tasks.filter((task) => task.time === "morning")
   const afternoonTasks = tasks.filter((task) => task.time === "afternoon")
   const eveningTasks = tasks.filter((task) => task.time === "evening")
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      const response = await fetch("http://localhost:3000/tasks", {
+        method: "get",
+      })
+
+      const tasks = await response.json()
+
+      setTasks(tasks)
+    }
+
+    fetchTasks()
+  }, [])
 
   const handleTaskCheckboxClick = (taskId) => {
     const newTasks = tasks.map((task) => {
@@ -48,7 +61,15 @@ export const Tasks = () => {
     setTasks(newTasks)
   }
 
-  const handleTaskDeleteClick = (taskId) => {
+  const handleTaskDeleteClick = async (taskId) => {
+    const response = await fetch(`http://localhost:3000/tasks/${taskId}`, {
+      method: "delete",
+    })
+
+    if (!response.ok) {
+      return toast.error("Erro ao excluir a tarefa, tente novamente")
+    }
+
     const newTasks = tasks.filter((task) => task.id !== taskId)
 
     setTasks(newTasks)
@@ -56,7 +77,16 @@ export const Tasks = () => {
     toast.success("Tarefa deletada com sucesso!")
   }
 
-  const handleAddTaskSubmit = (task) => {
+  const handleAddTaskSubmit = async (task) => {
+    const response = await fetch("http://localhost:3000/tasks", {
+      method: "post",
+      body: JSON.stringify(task),
+    })
+
+    if (!response.ok) {
+      return toast.error("Erro ao adicionar a tarefa, tente novamente")
+    }
+
     setTasks([...tasks, task])
     toast.success("Tarefa adicionada com sucesso")
   }
