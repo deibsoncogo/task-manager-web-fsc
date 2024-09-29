@@ -1,4 +1,5 @@
 import { forwardRef } from "react"
+import { InputErrorMessage } from "./InputErrorMessage"
 import { Label } from "./Label"
 
 export const Select = forwardRef(
@@ -18,9 +19,7 @@ export const Select = forwardRef(
           <option value="evening">Noite</option>
         </select>
 
-        {errorMessage && (
-          <p className="text-left text-xs text-red-500">{errorMessage}</p>
-        )}
+        {errorMessage && <InputErrorMessage>{errorMessage}</InputErrorMessage>}
       </div>
     )
   }
