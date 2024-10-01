@@ -7,9 +7,9 @@ import {
   SunIcon,
   TrashIcon,
 } from "../assets/icons"
-import { TaskItem } from "../components/TaskItem"
 import { AddTaskDialog } from "./AddTaskDialog"
 import { Button } from "./Button"
+import { TaskItem } from "./TaskItem"
 import { TasksSeparator } from "./TasksSeparator"
 
 export const Tasks = () => {
@@ -61,15 +61,7 @@ export const Tasks = () => {
     setTasks(newTasks)
   }
 
-  const handleTaskDeleteClick = async (taskId) => {
-    const response = await fetch(`http://localhost:3000/tasks/${taskId}`, {
-      method: "delete",
-    })
-
-    if (!response.ok) {
-      return toast.error("Erro ao excluir a tarefa, tente novamente")
-    }
-
+  const onDeleteTaskSuccess = async (taskId) => {
     const newTasks = tasks.filter((task) => task.id !== taskId)
 
     setTasks(newTasks)
@@ -128,7 +120,7 @@ export const Tasks = () => {
               key={task.id}
               task={task}
               handleCheckboxClick={handleTaskCheckboxClick}
-              handleDeleteClick={handleTaskDeleteClick}
+              onDeleteSuccess={onDeleteTaskSuccess}
             />
           ))}
         </div>
@@ -141,7 +133,7 @@ export const Tasks = () => {
               key={task.id}
               task={task}
               handleCheckboxClick={handleTaskCheckboxClick}
-              handleDeleteClick={handleTaskDeleteClick}
+              onDeleteSuccess={onDeleteTaskSuccess}
             />
           ))}
         </div>
@@ -154,7 +146,7 @@ export const Tasks = () => {
               key={task.id}
               task={task}
               handleCheckboxClick={handleTaskCheckboxClick}
-              handleDeleteClick={handleTaskDeleteClick}
+              onDeleteSuccess={onDeleteTaskSuccess}
             />
           ))}
         </div>

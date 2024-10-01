@@ -1,8 +1,28 @@
 import PropTypes from "prop-types"
+import { useState } from "react"
+import { toast } from "sonner"
 import { CheckIcon, DetailsIcon, LoaderIcon, TrashIcon } from "../assets/icons"
 import { Button } from "./Button"
 
-export const TaskItem = ({ task, handleCheckboxClick, handleDeleteClick }) => {
+export const TaskItem = ({ task, handleCheckboxClick, onDeleteSuccess }) => {
+  const [deleteIsLoading, setDeleteIsLoading] = useState(false)
+
+  const handleDeleteClick = async () => {
+    setDeleteIsLoading(true)
+
+    const response = await fetch(`http://localhost:3000/tasks/${task.id}`, {
+      method: "delete",
+    })
+
+    setDeleteIsLoading(false)
+
+    if (!response.ok) {
+      return toast.error("Erro ao deletar a tarefa, tente novamente")
+    }
+
+    onDeleteSuccess(task.id)
+  }
+
   const getVariantClasses = () => {
     if (task.status === "done") {
       return "bg-brand-primary text-brand-primary"
@@ -34,15 +54,25 @@ export const TaskItem = ({ task, handleCheckboxClick, handleDeleteClick }) => {
 
           {task.status === "done" && <CheckIcon />}
 
-          {task.status === "inProgress" && <LoaderIcon />}
+          {task.status === "inProgress" && (
+            <LoaderIcon className="text-brand-white" />
+          )}
         </label>
 
         {task.title}
       </div>
 
       <div className="flex items-center gap-2">
-        <Button onClick={() => handleDeleteClick(task.id)} color="ghost">
-          <TrashIcon className="text-brand-text-gray" />
+        <Button
+          color="ghost"
+          onClick={handleDeleteClick}
+          disabled={deleteIsLoading}
+        >
+          {deleteIsLoading ? (
+            <LoaderIcon className="animate-spin text-brand-text-gray" />
+          ) : (
+            <TrashIcon className="text-brand-text-gray" />
+          )}
         </Button>
 
         <a href="#" className="transition hover:opacity-75">
@@ -62,5 +92,5 @@ TaskItem.propTypes = {
     status: PropTypes.oneOf(["notStarted", "inProgress", "done"]).isRequired,
   }).isRequired,
   handleCheckboxClick: PropTypes.func.isRequired,
-  handleDeleteClick: PropTypes.func.isRequired,
+  onDeleteSuccess: PropTypes.func.isRequired,
 }
