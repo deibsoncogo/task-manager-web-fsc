@@ -2,20 +2,26 @@ import PropTypes from "prop-types"
 import { useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { CSSTransition } from "react-transition-group"
+import { toast } from "sonner"
+import { v4 } from "uuid"
+import { LoaderIcon } from "../assets/icons"
 import "./AddTaskDialog.css"
 import { Button } from "./Button"
 import { Input } from "./Input"
 import { Select } from "./Select"
 
-export const AddTaskDialog = ({ isOpen, handleClose, handleSubmit }) => {
+export const AddTaskDialog = ({ isOpen, handleClose, onSubmitSuccess }) => {
   const [errors, setErrors] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
 
   const titleRef = useRef()
   const timeRef = useRef()
   const descriptionRef = useRef()
   const nodeRef = useRef()
 
-  const handleSaveClick = () => {
+  const handleSaveClick = async () => {
+    setIsLoading(true)
+
     const newErrors = []
 
     const title = titleRef.current.value
@@ -40,16 +46,23 @@ export const AddTaskDialog = ({ isOpen, handleClose, handleSubmit }) => {
     setErrors(newErrors)
 
     if (newErrors.length > 0) {
-      return
+      return setIsLoading(false)
     }
 
-    handleSubmit({
-      id: Math.random(),
-      title,
-      time,
-      description,
-      status: "notStarted",
+    const task = { id: v4(), title, time, description, status: "notStarted" }
+
+    const response = await fetch("http://localhost:3000/tasks", {
+      method: "post",
+      body: JSON.stringify(task),
     })
+
+    setIsLoading(false)
+
+    if (!response.ok) {
+      return toast.error("Erro ao adicionar a tarefa, tente novamente")
+    }
+
+    onSubmitSuccess(task)
 
     handleClose()
   }
@@ -91,6 +104,7 @@ export const AddTaskDialog = ({ isOpen, handleClose, handleSubmit }) => {
                   placeholder="Insira o título da tarefa"
                   errorMessage={titleError?.message}
                   ref={titleRef}
+                  disabled={isLoading}
                 />
 
                 <Select
@@ -98,6 +112,7 @@ export const AddTaskDialog = ({ isOpen, handleClose, handleSubmit }) => {
                   label="Horário"
                   errorMessage={timeError?.message}
                   ref={timeRef}
+                  disabled={isLoading}
                 />
 
                 <Input
@@ -106,6 +121,7 @@ export const AddTaskDialog = ({ isOpen, handleClose, handleSubmit }) => {
                   placeholder="Descreva a tarefa"
                   errorMessage={descriptionError?.message}
                   ref={descriptionRef}
+                  disabled={isLoading}
                 />
 
                 <div className="flex gap-3">
@@ -121,8 +137,10 @@ export const AddTaskDialog = ({ isOpen, handleClose, handleSubmit }) => {
                   <Button
                     size="large"
                     onClick={handleSaveClick}
+                    disabled={isLoading}
                     className="w-full"
                   >
+                    {isLoading && <LoaderIcon className="mr-2 animate-spin" />}
                     Salvar
                   </Button>
                 </div>
@@ -139,5 +157,5 @@ export const AddTaskDialog = ({ isOpen, handleClose, handleSubmit }) => {
 AddTaskDialog.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   handleClose: PropTypes.func.isRequired,
-  handleSubmit: PropTypes.func.isRequired,
+  onSubmitSuccess: PropTypes.func.isRequired,
 }
