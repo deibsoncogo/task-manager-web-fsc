@@ -1,6 +1,12 @@
-import { useEffect, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
-import { ArrowLeftIcon, ChevronRightIcon, TrashIcon } from "../assets/icons"
+import { useEffect, useRef, useState } from "react"
+import { Link, useNavigate, useParams } from "react-router-dom"
+import { toast } from "sonner"
+import {
+  ArrowLeftIcon,
+  ChevronRightIcon,
+  LoaderIcon,
+  TrashIcon,
+} from "../assets/icons"
 import { Button } from "../components/Button"
 import { Input } from "../components/Input"
 import { Select } from "../components/Select"
@@ -10,17 +16,89 @@ export const TaskDetails = () => {
   const { taskId } = useParams()
 
   const [task, setTask] = useState({})
+  const [saveIsLoading, setSaveIsLoading] = useState(false)
+  const [errors, setErrors] = useState([])
 
   const navigate = useNavigate()
+
+  const titleRef = useRef()
+  const timeRef = useRef()
+  const descriptionRef = useRef()
 
   const handleBackClick = () => {
     navigate(-1)
   }
 
+  const handleSaveClick = async () => {
+    setSaveIsLoading(true)
+
+    const newErrors = []
+
+    const title = titleRef.current.value
+    const time = timeRef.current.value
+    const description = descriptionRef.current.value
+
+    if (!title.trim()) {
+      newErrors.push({ inputName: "title", message: "O título é obrigatório" })
+    }
+
+    if (!time.trim()) {
+      newErrors.push({ inputName: "time", message: "O horário é obrigatório" })
+    }
+
+    if (!description.trim()) {
+      newErrors.push({
+        inputName: "description",
+        message: "A descrição é obrigatória",
+      })
+    }
+
+    setErrors(newErrors)
+
+    if (newErrors.length > 0) {
+      return setSaveIsLoading(false)
+    }
+
+    const response = await fetch(`http://localhost:3000/tasks/${task.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ title, time, description }),
+    })
+
+    setSaveIsLoading(false)
+
+    if (!response.ok) {
+      return toast.error("Erro ao alterar a tarefa, tente novamente")
+    }
+
+    const newTask = await response.json()
+
+    setTask(newTask)
+
+    toast.success("Tarefa salva com sucesso")
+  }
+
+  const handleDeleteClick = async () => {
+    setSaveIsLoading(true)
+
+    const response = await fetch(`http://localhost:3000/tasks/${task.id}`, {
+      method: "DELETE",
+    })
+
+    setSaveIsLoading(false)
+
+    if (!response.ok) {
+      return toast.error("Erro ao excluir a tarefa, tente novamente")
+    }
+
+    toast.success("Tarefa excluída com sucesso")
+
+    navigate(-1)
+  }
+
   useEffect(() => {
-    const fetchTasks = async () => {
+    const fetchTask = async () => {
       const response = await fetch(`http://localhost:3000/tasks/${taskId}`, {
-        method: "get",
+        method: "GET",
       })
 
       const data = await response.json()
@@ -28,8 +106,15 @@ export const TaskDetails = () => {
       setTask(data)
     }
 
-    fetchTasks()
+    fetchTask()
   }, [taskId])
+
+  const titleError = errors.find(({ inputName }) => inputName === "title")
+  const timeError = errors.find(({ inputName }) => inputName === "time")
+
+  const descriptionError = errors.find(
+    ({ inputName }) => inputName === "description"
+  )
 
   return (
     <div className="flex">
@@ -47,12 +132,9 @@ export const TaskDetails = () => {
             </button>
 
             <div className="flex items-center gap-1 text-xs">
-              <button
-                onClick={handleBackClick}
-                className="text-brand-text-gray"
-              >
+              <Link to="/" className="text-brand-text-gray">
                 Minhas tarefas
-              </button>
+              </Link>
 
               <ChevronRightIcon className="text-brand-text-gray" />
 
@@ -64,7 +146,14 @@ export const TaskDetails = () => {
             <h1 className="mt-2 text-xl font-semibold">{task?.title}</h1>
           </div>
 
-          <Button color="danger" className="h-fit self-end">
+          <Button
+            type="button"
+            onClick={handleDeleteClick}
+            disabled={saveIsLoading}
+            color="danger"
+            className="h-fit self-end"
+          >
+            {saveIsLoading && <LoaderIcon className="animate-spin" />}
             <TrashIcon /> Deletar Tarefa
           </Button>
         </div>
@@ -74,25 +163,40 @@ export const TaskDetails = () => {
             id="title"
             label="Título"
             placeholder="Insira o título da tarefa"
-            value={task?.title}
+            errorMessage={titleError?.message}
+            defaultValue={task?.title}
+            ref={titleRef}
+            disabled={saveIsLoading}
           />
 
-          <Select id="time" label="Horário" value={task?.time} />
+          <Select
+            id="time"
+            label="Horário"
+            errorMessage={timeError?.message}
+            defaultValue={task?.time}
+            ref={timeRef}
+            disabled={saveIsLoading}
+          />
 
           <Input
             id="description"
             label="Descrição"
             placeholder="Descreva a tarefa"
-            value={task?.description}
+            errorMessage={descriptionError?.message}
+            defaultValue={task?.description}
+            ref={descriptionRef}
+            disabled={saveIsLoading}
           />
         </div>
 
         <div className="flex w-full justify-end gap-3">
-          <Button size="large" color="secondary">
-            Cancelar
-          </Button>
-
-          <Button size="large" color="primary">
+          <Button
+            onClick={handleSaveClick}
+            disabled={saveIsLoading}
+            size="large"
+            color="primary"
+          >
+            {saveIsLoading && <LoaderIcon className="animate-spin" />}
             Salvar
           </Button>
         </div>
