@@ -44,6 +44,8 @@ export const AddTaskDialog = ({ isOpen, handleClose, onSubmitSuccess }) => {
     onSubmitSuccess(task)
 
     handleClose()
+
+    reset({ title: "", time: "morning", description: "" })
   }
 
   const handleCancelClick = () => {
