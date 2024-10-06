@@ -1,6 +1,7 @@
 import PropTypes from "prop-types"
-import { useRef, useState } from "react"
+import { useRef } from "react"
 import { createPortal } from "react-dom"
+import { useForm } from "react-hook-form"
 import { CSSTransition } from "react-transition-group"
 import { toast } from "sonner"
 import { v4 } from "uuid"
@@ -11,55 +12,33 @@ import { Input } from "./Input"
 import { Select } from "./Select"
 
 export const AddTaskDialog = ({ isOpen, handleClose, onSubmitSuccess }) => {
-  const [errors, setErrors] = useState([])
-  const [isLoading, setIsLoading] = useState(false)
-
-  const titleRef = useRef()
-  const timeRef = useRef()
-  const descriptionRef = useRef()
   const nodeRef = useRef()
 
-  const handleSaveClick = async () => {
-    setIsLoading(true)
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    defaultValues: { title: "", time: "morning", description: "" },
+  })
 
-    const newErrors = []
-
-    const title = titleRef.current.value
-    const time = timeRef.current.value
-    const description = descriptionRef.current.value
-
-    if (!title.trim()) {
-      newErrors.push({ inputName: "title", message: "O título é obrigatório" })
+  const handleSaveClick = async (data) => {
+    const task = {
+      id: v4(),
+      title: data.title.trim(),
+      time: data.time.trim(),
+      description: data.description.trim(),
+      status: "notStarted",
     }
-
-    if (!time.trim()) {
-      newErrors.push({ inputName: "time", message: "O horário é obrigatório" })
-    }
-
-    if (!description.trim()) {
-      newErrors.push({
-        inputName: "description",
-        message: "A descrição é obrigatória",
-      })
-    }
-
-    setErrors(newErrors)
-
-    if (newErrors.length > 0) {
-      return setIsLoading(false)
-    }
-
-    const task = { id: v4(), title, time, description, status: "notStarted" }
 
     const response = await fetch("http://localhost:3000/tasks", {
       method: "post",
       body: JSON.stringify(task),
     })
 
-    setIsLoading(false)
-
     if (!response.ok) {
-      return toast.error("Erro ao adicionar a tarefa, tente novamente")
+      return toast.error("Falha ao criar a tarefa")
     }
 
     onSubmitSuccess(task)
@@ -67,12 +46,10 @@ export const AddTaskDialog = ({ isOpen, handleClose, onSubmitSuccess }) => {
     handleClose()
   }
 
-  const titleError = errors.find(({ inputName }) => inputName === "title")
-  const timeError = errors.find(({ inputName }) => inputName === "time")
-
-  const descriptionError = errors.find(
-    ({ inputName }) => inputName === "description"
-  )
+  const handleCancelClick = () => {
+    reset({ title: "", time: "morning", description: "" })
+    handleClose()
+  }
 
   return (
     <CSSTransition
@@ -97,36 +74,58 @@ export const AddTaskDialog = ({ isOpen, handleClose, onSubmitSuccess }) => {
                 Insira as informações abaixo
               </p>
 
-              <div className="flex w-[336px] flex-col space-y-4">
+              <form
+                onSubmit={handleSubmit(handleSaveClick)}
+                className="flex w-[336px] flex-col space-y-4"
+              >
                 <Input
                   id="title"
                   label="Título"
                   placeholder="Insira o título da tarefa"
-                  errorMessage={titleError?.message}
-                  ref={titleRef}
-                  disabled={isLoading}
+                  errorMessage={errors?.title?.message}
+                  disabled={isSubmitting}
+                  {...register("title", {
+                    required: "O título é obrigatório",
+                    validate: (value) => {
+                      if (!value.trim()) return "O título não pode ser vazio"
+                      return true
+                    },
+                  })}
                 />
 
                 <Select
                   id="time"
                   label="Horário"
-                  errorMessage={timeError?.message}
-                  ref={timeRef}
-                  disabled={isLoading}
+                  errorMessage={errors?.time?.message}
+                  disabled={isSubmitting}
+                  {...register("time", {
+                    required: "O horário é obrigatório",
+                    validate: (value) => {
+                      if (!value.trim()) return "O horário não pode ser vazio"
+                      return true
+                    },
+                  })}
                 />
 
                 <Input
                   id="description"
                   label="Descrição"
                   placeholder="Descreva a tarefa"
-                  errorMessage={descriptionError?.message}
-                  ref={descriptionRef}
-                  disabled={isLoading}
+                  errorMessage={errors?.description?.message}
+                  disabled={isSubmitting}
+                  {...register("description", {
+                    required: "A descrição é obrigatória",
+                    validate: (value) => {
+                      if (!value.trim()) return "A descrição não pode ser vazia"
+                      return true
+                    },
+                  })}
                 />
 
                 <div className="flex gap-3">
                   <Button
-                    onClick={() => handleClose()}
+                    type="button"
+                    onClick={handleCancelClick}
                     color="secondary"
                     size="large"
                     className="w-full"
@@ -135,16 +134,18 @@ export const AddTaskDialog = ({ isOpen, handleClose, onSubmitSuccess }) => {
                   </Button>
 
                   <Button
+                    type="submit"
                     size="large"
-                    onClick={handleSaveClick}
-                    disabled={isLoading}
+                    disabled={isSubmitting}
                     className="w-full"
                   >
-                    {isLoading && <LoaderIcon className="mr-2 animate-spin" />}
+                    {isSubmitting && (
+                      <LoaderIcon className="mr-2 animate-spin" />
+                    )}
                     Salvar
                   </Button>
                 </div>
-              </div>
+              </form>
             </div>
           </div>,
           document.body
