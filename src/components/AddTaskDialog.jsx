@@ -1,3 +1,4 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import PropTypes from "prop-types"
 import { useRef } from "react"
 import { createPortal } from "react-dom"
@@ -11,7 +12,23 @@ import { Button } from "./Button"
 import { Input } from "./Input"
 import { Select } from "./Select"
 
-export const AddTaskDialog = ({ isOpen, handleClose, onSubmitSuccess }) => {
+export const AddTaskDialog = ({ isOpen, handleClose }) => {
+  const { mutate } = useMutation({
+    mutationKey: "addTask",
+    mutationFn: async (task) => {
+      const response = await fetch("http://localhost:3000/tasks", {
+        method: "POST",
+        body: JSON.stringify(task),
+      })
+
+      if (!response.ok) throw new Error("Falha ao criar a tarefa")
+
+      return response.json()
+    },
+  })
+
+  const queryClient = useQueryClient()
+
   const nodeRef = useRef()
 
   const {
@@ -32,25 +49,26 @@ export const AddTaskDialog = ({ isOpen, handleClose, onSubmitSuccess }) => {
       status: "notStarted",
     }
 
-    const response = await fetch("http://localhost:3000/tasks", {
-      method: "post",
-      body: JSON.stringify(task),
+    mutate(task, {
+      onSuccess: () => {
+        queryClient.setQueryData("tasks", (currentTasks) => {
+          return [...currentTasks, task]
+        })
+
+        handleClose()
+        reset({ title: "", time: "morning", description: "" })
+        toast.success("Tarefa adicionada com sucesso")
+      },
+
+      onError: () => {
+        toast.error("Falha ao criar a tarefa")
+      },
     })
-
-    if (!response.ok) {
-      return toast.error("Falha ao criar a tarefa")
-    }
-
-    onSubmitSuccess(task)
-
-    handleClose()
-
-    reset({ title: "", time: "morning", description: "" })
   }
 
   const handleCancelClick = () => {
-    reset({ title: "", time: "morning", description: "" })
     handleClose()
+    reset({ title: "", time: "morning", description: "" })
   }
 
   return (
@@ -160,5 +178,4 @@ export const AddTaskDialog = ({ isOpen, handleClose, onSubmitSuccess }) => {
 AddTaskDialog.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   handleClose: PropTypes.func.isRequired,
-  onSubmitSuccess: PropTypes.func.isRequired,
 }
