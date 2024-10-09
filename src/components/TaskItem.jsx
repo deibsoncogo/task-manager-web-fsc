@@ -6,6 +6,8 @@ import { CheckIcon, DetailsIcon, LoaderIcon, TrashIcon } from "../assets/icons"
 import { Button } from "./Button"
 
 export const TaskItem = ({ task, handleCheckboxClick }) => {
+  const queryClient = useQueryClient()
+
   const { mutate, isPending } = useMutation({
     mutationKey: ["deleteTask", task.id],
     mutationFn: async () => {
@@ -13,19 +15,17 @@ export const TaskItem = ({ task, handleCheckboxClick }) => {
         method: "DELETE",
       })
 
-      return response
+      if (!response.ok) throw new Error()
+
+      queryClient.setQueryData("tasks", (oldTasks) => {
+        return oldTasks.filter((oldTask) => oldTask.id !== task.id)
+      })
     },
   })
-
-  const queryClient = useQueryClient()
 
   const handleDeleteClick = async () => {
     mutate(undefined, {
       onSuccess: () => {
-        queryClient.setQueryData("tasks", (currentTasks) => {
-          return currentTasks.filter((oldTask) => oldTask.id !== task.id)
-        })
-
         toast.success("Tarefa excluída com sucesso")
       },
 

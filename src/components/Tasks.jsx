@@ -14,6 +14,9 @@ import { TaskItem } from "./TaskItem"
 import { TasksSeparator } from "./TasksSeparator"
 
 export const Tasks = () => {
+  const queryClient = useQueryClient()
+  const [addTaskDialogIsOpen, setAddTaskDialogIsOpen] = useState(false)
+
   const { data: tasks } = useQuery({
     queryKey: "tasks",
     queryFn: async () => {
@@ -21,15 +24,16 @@ export const Tasks = () => {
         method: "GET",
       })
 
+      if (!response.ok) {
+        toast.error("Falha ao buscar as tarefas")
+        return []
+      }
+
       const tasks = await response.json()
 
       return tasks
     },
   })
-
-  const queryClient = useQueryClient()
-
-  const [addTaskDialogIsOpen, setAddTaskDialogIsOpen] = useState(false)
 
   const morningTasks = tasks?.filter((task) => task.time === "morning")
   const afternoonTasks = tasks?.filter((task) => task.time === "afternoon")

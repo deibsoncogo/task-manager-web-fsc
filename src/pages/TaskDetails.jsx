@@ -16,8 +16,15 @@ import { Sidebar } from "../components/Sidebar"
 
 export const TaskDetails = () => {
   const { taskId } = useParams()
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm()
 
   const { data: task } = useQuery({
     queryKey: ["task", taskId],
@@ -26,11 +33,16 @@ export const TaskDetails = () => {
         method: "GET",
       })
 
-      if (!response.ok) throw new Error("Falha ao buscar a tarefa")
+      if (!response.ok) {
+        toast.error("Falha ao buscar a tarefa")
+        return {}
+      }
 
-      const data = await response.json()
+      const result = await response.json()
 
-      reset(data)
+      reset(result)
+
+      return result
     },
   })
 
@@ -48,7 +60,7 @@ export const TaskDetails = () => {
 
       if (!response.ok) throw new Error()
 
-      const updateTask = response.json()
+      const updateTask = await response.json()
 
       queryClient.setQueryData("tasks", (oldTasks) => {
         return oldTasks.map((taskMap) => {
@@ -56,6 +68,10 @@ export const TaskDetails = () => {
           return taskMap
         })
       })
+
+      reset(updateTask)
+
+      return updateTask
     },
   })
 
@@ -71,17 +87,12 @@ export const TaskDetails = () => {
       const deleteTask = response.json()
 
       queryClient.setQueryData("tasks", (oldTasks) => {
-        return oldTasks.filter((taskFilter) => taskFilter.id !== deleteTask.id)
+        return oldTasks.filter((oldTask) => oldTask.id !== deleteTask.id)
       })
+
+      navigate(-1)
     },
   })
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm()
 
   const handleBackClick = () => {
     navigate(-1)
@@ -103,7 +114,6 @@ export const TaskDetails = () => {
     deleteTask(undefined, {
       onSuccess: () => {
         toast.success("Tarefa excluída com sucesso")
-        handleBackClick()
       },
 
       onError: () => {

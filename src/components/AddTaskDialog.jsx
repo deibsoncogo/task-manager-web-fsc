@@ -13,22 +13,7 @@ import { Input } from "./Input"
 import { Select } from "./Select"
 
 export const AddTaskDialog = ({ isOpen, handleClose }) => {
-  const { mutate } = useMutation({
-    mutationKey: "addTask",
-    mutationFn: async (task) => {
-      const response = await fetch("http://localhost:3000/tasks", {
-        method: "POST",
-        body: JSON.stringify(task),
-      })
-
-      if (!response.ok) throw new Error("Falha ao criar a tarefa")
-
-      return response.json()
-    },
-  })
-
   const queryClient = useQueryClient()
-
   const nodeRef = useRef()
 
   const {
@@ -38,6 +23,28 @@ export const AddTaskDialog = ({ isOpen, handleClose }) => {
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: { title: "", time: "morning", description: "" },
+  })
+
+  const { mutate } = useMutation({
+    mutationKey: ["addTask"],
+    mutationFn: async (task) => {
+      const response = await fetch("http://localhost:3000/tasks", {
+        method: "POST",
+        body: JSON.stringify(task),
+      })
+
+      if (!response.ok) throw new Error()
+
+      const result = await response.json()
+
+      queryClient.setQueryData("tasks", (currentTasks) => {
+        return [...currentTasks, result]
+      })
+
+      handleClose()
+
+      reset({ title: "", time: "morning", description: "" })
+    },
   })
 
   const handleSaveClick = async (data) => {
@@ -51,13 +58,7 @@ export const AddTaskDialog = ({ isOpen, handleClose }) => {
 
     mutate(task, {
       onSuccess: () => {
-        queryClient.setQueryData("tasks", (currentTasks) => {
-          return [...currentTasks, task]
-        })
-
-        handleClose()
-        reset({ title: "", time: "morning", description: "" })
-        toast.success("Tarefa adicionada com sucesso")
+        toast.success("Tarefa criada com sucesso")
       },
 
       onError: () => {
