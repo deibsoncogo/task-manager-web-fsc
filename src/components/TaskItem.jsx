@@ -9,9 +9,9 @@ export const TaskItem = ({ task, handleCheckboxClick }) => {
   const queryClient = useQueryClient()
 
   const { mutate, isPending } = useMutation({
-    mutationKey: ["deleteTask", task.id],
-    mutationFn: async () => {
-      const response = await fetch(`http://localhost:3000/tasks/${task.id}`, {
+    mutationKey: "deleteTask",
+    mutationFn: async (taskId) => {
+      const response = await fetch(`http://localhost:3000/tasks/${taskId}`, {
         method: "DELETE",
       })
 
@@ -24,7 +24,7 @@ export const TaskItem = ({ task, handleCheckboxClick }) => {
   })
 
   const handleDeleteClick = async () => {
-    mutate(undefined, {
+    mutate(task.id, {
       onSuccess: () => {
         toast.success("Tarefa excluída com sucesso")
       },

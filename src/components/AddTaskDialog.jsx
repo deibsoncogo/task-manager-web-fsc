@@ -19,7 +19,7 @@ export const AddTaskDialog = ({ isOpen, handleClose }) => {
   const {
     register,
     handleSubmit,
-    reset,
+    resetField,
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: { title: "", time: "morning", description: "" },
@@ -37,22 +37,20 @@ export const AddTaskDialog = ({ isOpen, handleClose }) => {
 
       const result = await response.json()
 
-      queryClient.setQueryData("tasks", (currentTasks) => {
-        return [...currentTasks, result]
+      queryClient.setQueryData("tasks", (oldTasks) => {
+        return [...oldTasks, result]
       })
 
-      handleClose()
-
-      reset({ title: "", time: "morning", description: "" })
+      handleCancelClick()
     },
   })
 
-  const handleSaveClick = async (data) => {
+  const handleSaveClick = async ({ title, time, description }) => {
     const task = {
       id: v4(),
-      title: data.title.trim(),
-      time: data.time.trim(),
-      description: data.description.trim(),
+      title: title.trim(),
+      time: time.trim(),
+      description: description.trim(),
       status: "notStarted",
     }
 
@@ -69,7 +67,9 @@ export const AddTaskDialog = ({ isOpen, handleClose }) => {
 
   const handleCancelClick = () => {
     handleClose()
-    reset({ title: "", time: "morning", description: "" })
+    resetField("title")
+    resetField("time")
+    resetField("description")
   }
 
   return (

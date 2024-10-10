@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useEffect } from "react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
@@ -15,6 +15,7 @@ import { Select } from "../components/Select"
 import { Sidebar } from "../components/Sidebar"
 
 export const TaskDetails = () => {
+  const [task, setTask] = useState({})
   const { taskId } = useParams()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
@@ -26,8 +27,8 @@ export const TaskDetails = () => {
     formState: { errors },
   } = useForm()
 
-  const { data: task } = useQuery({
-    queryKey: ["task", taskId],
+  useQuery({
+    queryKey: "task",
     queryFn: async () => {
       const response = await fetch(`http://localhost:3000/tasks/${taskId}`, {
         method: "GET",
@@ -40,66 +41,72 @@ export const TaskDetails = () => {
 
       const result = await response.json()
 
+      setTask(result)
       reset(result)
-
-      return result
     },
   })
 
   const { mutate: updateTask, isPending: isPendingUpdateTask } = useMutation({
-    mutationKey: ["updateTask", taskId],
-    mutationFn: async (data) => {
-      const response = await fetch(`http://localhost:3000/tasks/${taskId}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          title: data.title.trim(),
-          time: data.time.trim(),
-          description: data.description.trim(),
-        }),
-      })
+    mutationKey: "updateTask",
+    mutationFn: async ({ taskIdUpdate, title, time, description }) => {
+      const response = await fetch(
+        `http://localhost:3000/tasks/${taskIdUpdate}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            title: title.trim(),
+            time: time.trim(),
+            description: description.trim(),
+          }),
+        }
+      )
 
       if (!response.ok) throw new Error()
 
       const updateTask = await response.json()
 
       queryClient.setQueryData("tasks", (oldTasks) => {
-        return oldTasks.map((taskMap) => {
-          if (taskMap.id === taskId) return updateTask
+        const newTasks = oldTasks.map((taskMap) => {
+          if (taskMap.id === taskIdUpdate) return updateTask
           return taskMap
         })
+
+        return newTasks
       })
 
+      setTask(updateTask)
       reset(updateTask)
-
-      return updateTask
     },
   })
 
   const { mutate: deleteTask, isPending: isPendingDeleteTask } = useMutation({
-    mutationKey: ["deleteTask", taskId],
-    mutationFn: async () => {
-      const response = await fetch(`http://localhost:3000/tasks/${task.id}`, {
-        method: "DELETE",
-      })
+    mutationKey: "deleteTask",
+    mutationFn: async (taskIdDelete) => {
+      const response = await fetch(
+        `http://localhost:3000/tasks/${taskIdDelete}`,
+        {
+          method: "DELETE",
+        }
+      )
 
       if (!response.ok) throw new Error()
 
-      const deleteTask = response.json()
-
       queryClient.setQueryData("tasks", (oldTasks) => {
-        return oldTasks.filter((oldTask) => oldTask.id !== deleteTask.id)
+        return oldTasks.filter((oldTask) => oldTask.id !== taskIdDelete)
       })
 
-      navigate(-1)
+      handleBackClick()
     },
   })
 
   const handleBackClick = () => {
-    navigate(-1)
+    navigate("/")
   }
 
   const handleSaveClick = async (data) => {
-    updateTask(data, {
+    const preData = { taskIdUpdate: taskId, ...data }
+
+    updateTask(preData, {
       onSuccess: () => {
         toast.success("Tarefa atualizada com sucesso")
       },
@@ -111,7 +118,7 @@ export const TaskDetails = () => {
   }
 
   const handleDeleteClick = async () => {
-    deleteTask(undefined, {
+    deleteTask(taskId, {
       onSuccess: () => {
         toast.success("Tarefa excluída com sucesso")
       },
@@ -121,24 +128,6 @@ export const TaskDetails = () => {
       },
     })
   }
-
-  useEffect(() => {
-    const fetchTask = async () => {
-      const response = await fetch(`http://localhost:3000/tasks/${taskId}`, {
-        method: "GET",
-      })
-
-      if (!response.ok) {
-        return toast.error("Falha ao buscar as informações da tarefa")
-      }
-
-      const data = await response.json()
-
-      reset(data)
-    }
-
-    fetchTask()
-  }, [taskId, reset])
 
   return (
     <div className="flex">
